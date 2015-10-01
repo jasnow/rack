@@ -33,7 +33,7 @@ describe Rack::Handler::CGI do
 
   it "have rack headers" do
     GET("/test")
-    response["rack.version"].must_equal [1,1]
+    response["rack.version"].must_equal [1,3]
     assert_equal false, response["rack.multithread"]
     assert_equal true, response["rack.multiprocess"]
     assert_equal true, response["rack.run_once"]
