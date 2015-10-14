@@ -99,7 +99,7 @@ module Rack
       @block == nil && @body.empty?
     end
 
-    def have_header?(key);  headers.key? key;   end
+    def has_header?(key);   headers.key? key;   end
     def get_header(key);    headers[key];       end
     def set_header(key, v); headers[key] = v;   end
     def delete_header(key); headers.delete key; end
@@ -132,7 +132,26 @@ module Rack
       def redirect?;            [301, 302, 303, 307, 308].include? status; end
 
       def include?(header)
-        have_header? header
+        has_header? header
+      end
+
+      # Add a header that may have multiple values.
+      #
+      # Example:
+      #   response.add_header 'Vary', 'Accept-Encoding'
+      #   response.add_header 'Vary', 'Cookie'
+      #
+      #   assert_equal 'Accept-Encoding,Cookie', response.get_header('Vary')
+      #
+      # http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2
+      def add_header key, v
+        if v.nil?
+          get_header key
+        elsif has_header? key
+          set_header key, "#{get_header key},#{v}"
+        else
+          set_header key, v
+        end
       end
 
       def content_type
@@ -176,6 +195,22 @@ module Rack
       def set_cookie_header= v
         set_header SET_COOKIE, v
       end
+
+      def cache_control
+        get_header CACHE_CONTROL
+      end
+
+      def cache_control= v
+        set_header CACHE_CONTROL, v
+      end
+
+      def etag
+        get_header ETAG
+      end
+
+      def etag= v
+        set_header ETAG, v
+      end
     end
 
     include Helpers
@@ -183,14 +218,15 @@ module Rack
     class Raw
       include Helpers
 
-      attr_reader :status, :headers
+      attr_reader :headers
+      attr_accessor :status
 
       def initialize status, headers
         @status = status
         @headers = headers
       end
 
-      def have_header?(key);  headers.key? key;   end
+      def has_header?(key);   headers.key? key;   end
       def get_header(key);    headers[key];       end
       def set_header(key, v); headers[key] = v;   end
       def delete_header(key); headers.delete key; end

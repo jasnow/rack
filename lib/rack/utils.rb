@@ -77,6 +77,17 @@ module Rack
       self.default_query_parser = self.default_query_parser.new_space_limit(v)
     end
 
+    if defined?(Process::CLOCK_MONOTONIC)
+      def clock_time
+        Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      end
+    else
+      def clock_time
+        Time.now.to_f
+      end
+    end
+    module_function :clock_time
+
     def parse_query(qs, d = nil, &unescaper)
       Rack::Utils.default_query_parser.parse_query(qs, d, &unescaper)
     end
@@ -251,6 +262,8 @@ module Rack
         [header, cookie].join("\n")
       when Array
         (header + [cookie]).join("\n")
+      else
+        raise ArgumentError, "Unrecognized cookie header value. Expected String, Array, or nil, got #{header.inspect}"
       end
     end
     module_function :add_cookie_to_header
